@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Digital KYC{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-5">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <h5 class="card-title">Upload Document</h5>
+        <form method="POST" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label">Document Type</label>
+            <select name="document_name" class="form-select" required>
+              <option value="Aadhaar">Aadhaar</option>
+              <option value="PAN">PAN Card</option>
+              <option value="Passport">Passport</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">File (PDF/PNG/JPG)</label>
+            <input type="file" name="file" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">Upload</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <h5>Your Documents</h5>
+    <table class="table table-bordered bg-white">
+      <thead>
+        <tr><th>Type</th><th>Uploaded</th><th>Status</th><th>Remarks</th></tr>
+      </thead>
+      <tbody>
+        {% for doc in documents %}
+        <tr>
+          <td>{{ doc.document_name }}</td>
+          <td>{{ doc.upload_date.strftime('%d %b %Y') }}</td>
+          <td>
+            {% set status = doc.verification.status if doc.verification else 'Pending' %}
+            <span class="badge bg-{{ 'success' if status == 'Approved' else 'danger' if status == 'Rejected' else 'warning text-dark' }}">
+              {{ status }}
+            </span>
+          </td>
+          <td>{{ doc.verification.remarks if doc.verification else '' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted">No documents uploaded yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - Digital KYC{% endblock %}
+{% block content %}
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm"><div class="card-body">
+      <h6 class="text-muted">Total Users</h6><h2>{{ total_users }}</h2>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm"><div class="card-body">
+      <h6 class="text-muted">Total Applications</h6><h2>{{ total_applications }}</h2>
+    </div></div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-center shadow-sm"><div class="card-body">
+      <h6 class="text-muted">Pending Verifications</h6><h2>{{ pending }}</h2>
+    </div></div>
+  </div>
+</div>
+
+<h5>All Submissions</h5>
+<table class="table table-bordered bg-white">
+  <thead>
+    <tr><th>User</th><th>Document</th><th>Status</th><th>Remarks</th><th>Action</th></tr>
+  </thead>
+  <tbody>
+    {% for verification, document, user in verifications %}
+    <tr>
+      <td>{{ user.username }}</td>
+      <td>{{ document.document_name }}</td>
+      <td>
+        <span class="badge bg-{{ 'success' if verification.status == 'Approved' else 'danger' if verification.status == 'Rejected' else 'warning text-dark' }}">
+          {{ verification.status }}
+        </span>
+      </td>
+      <td>{{ verification.remarks }}</td>
+      <td>
+        {% if verification.status == 'Pending' %}
+        <form method="POST" action="{{ url_for('admin_action', verification_id=verification.id) }}" class="d-flex gap-1">
+          <input type="text" name="remarks" placeholder="Remarks" class="form-control form-control-sm">
+          <button name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+          <button name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+        </form>
+        {% else %}
+        <span class="text-muted">Reviewed</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="text-center text-muted">No submissions yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

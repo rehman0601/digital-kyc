@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.db
+.pytest_cache/
+uploads/*
+!uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+backups/
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+*.tar.gz

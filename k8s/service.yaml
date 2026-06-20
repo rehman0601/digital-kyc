@@ -1,0 +1,17 @@
+# Phase 5: Kubernetes - Service
+# NodePort exposes the app outside the cluster on every node's IP at
+# the given port (here 30050). For minikube, access via:
+#   minikube service kyc-flask-service --url
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: kyc-flask-service
+spec:
+  type: NodePort
+  selector:
+    app: kyc-flask
+  ports:
+    - port: 5000
+      targetPort: 5000
+      nodePort: 30050

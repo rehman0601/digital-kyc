@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+*.db
+uploads/*
+!uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+.git/
+terraform/.terraform/
+terraform/*.tfstate*

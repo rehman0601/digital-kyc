@@ -1,0 +1,87 @@
+# Phase 5: Kubernetes - Flask Application Deployment
+# 2 replicas for high availability, as specified in the plan.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kyc-flask-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kyc-flask
+  template:
+    metadata:
+      labels:
+        app: kyc-flask
+    spec:
+      containers:
+        - name: kyc-flask
+          image: digital-kyc:latest
+          # If using minikube: run `eval $(minikube docker-env)` before
+          # `docker build` so the cluster can see the locally-built image,
+          # or push to Docker Hub and update this line to your-username/digital-kyc:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DB_HOST
+              value: mysql-service
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: kyc-secrets
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: kyc-secrets
+                  key: DB_PASS
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: kyc-secrets
+                  key: DB_NAME
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: kyc-secrets
+                  key: ADMIN_PASSWORD
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: kyc-flask-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: kyc-flask-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

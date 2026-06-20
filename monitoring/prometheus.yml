@@ -1,0 +1,31 @@
+# Phase 8: Monitoring - Prometheus
+# Scrapes metrics from the Flask app's /metrics endpoint
+# (exposed via prometheus-flask-exporter in app.py) and from
+# Kubernetes itself if running in-cluster.
+#
+# To run locally for a quick demo:
+#   docker run -p 9090:9090 -v $(pwd)/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Scrape the Flask app directly (local/Docker Compose demo)
+  - job_name: "kyc-flask-app"
+    static_configs:
+      - targets: ["host.docker.internal:5000"]
+        # If running inside Docker Compose instead, use: ["web:5000"]
+        # If running inside Kubernetes, use the service DNS name + port
+
+  # Scrape Kubernetes pods labeled for monitoring (cluster demo)
+  - job_name: "kubernetes-pods"
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_label_app]
+        regex: kyc-flask
+        action: keep
+      - source_labels: [__meta_kubernetes_pod_ip]
+        target_label: __address__
+        replacement: "${1}:5000"

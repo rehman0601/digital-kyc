@@ -29,10 +29,12 @@ pipeline {
 
         stage('Test') {
             steps {
-                echo 'Running application smoke tests...'
+                echo 'Running application smoke and unit tests...'
                 sh '''
                     . venv/bin/activate
+                    pip install pytest
                     python -c "import app"
+                    PYTHONPATH=. pytest tests/ -v
                 '''
             }
         }

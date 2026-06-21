@@ -1,0 +1,61 @@
+# Kubernetes Integration - HashiCorp Vault Agent Injector
+# Demonstrates dynamic secret injection on AWS EKS using annotations.
+# 
+# The Vault Agent sidecar runs as an init-container, authenticates using the EKS 
+# service account, fetches database credentials, and mounts them to the app pod.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kyc-flask-vault-deployment
+  labels:
+    app: kyc-flask-vault
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: kyc-flask-vault
+  template:
+    metadata:
+      labels:
+        app: kyc-flask-vault
+      annotations:
+        # Enable Vault Agent sidecar injector
+        vault.hashicorp.com/agent-inject: "true"
+        
+        # Define Vault secret engine path to query
+        vault.hashicorp.com/agent-inject-secret-config: "secret/data/digital-kyc/database"
+        
+        # Specify Vault IAM/Kubernetes auth role
+        vault.hashicorp.com/role: "kyc-app-role"
+        
+        # Define credential structure to render as file at /vault/secrets/config
+        vault.hashicorp.com/agent-inject-template-config: |
+          {{- with secret "secret/data/digital-kyc/database" -}}
+          export DB_USER="{{ .Data.data.username }}"
+          export DB_PASS="{{ .Data.data.password }}"
+          export DB_NAME="{{ .Data.data.dbname }}"
+          export DB_HOST="{{ .Data.data.host }}"
+          {{- end -}}
+    spec:
+      serviceAccountName: kyc-vault-auth-sa
+      containers:
+        - name: kyc-flask
+          image: digital-kyc:latest
+          ports:
+            - containerPort: 5000
+          # The app loads these env vars at startup by sourcing /vault/secrets/config
+          command: ["/bin/sh", "-c", "source /vault/secrets/config && gunicorn --bind 0.0.0.0:5000 --workers 2 app:app"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "300m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kyc-vault-auth-sa
+  namespace: default

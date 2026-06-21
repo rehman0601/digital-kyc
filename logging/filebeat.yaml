@@ -1,0 +1,29 @@
+# ELK Stack - Filebeat Configuration DaemonSet
+# Harvests Flask application logs and forwards them to Logstash
+
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    # Scan container mount path or app log folder
+    - /app/logs/*.log
+    - /var/log/containers/*kyc-flask*.log
+  
+  # Multiline settings to group tracebacks/exceptions together
+  multiline.pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}'
+  multiline.negate: true
+  multiline.match: after
+
+processors:
+  - add_host_metadata: ~
+  - add_kubernetes_metadata:
+      host: ${NODE_NAME}
+      matchers:
+        - logs_path:
+            resource_type: "pod"
+
+output.logstash:
+  # Route to internal K8s Service hosting Logstash
+  hosts: ["logstash-service:5044"]
+
+logging.level: info

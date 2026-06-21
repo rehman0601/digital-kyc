@@ -17,17 +17,18 @@ Disaster Recovery.
 digital-kyc/
 ├── app.py                  # Flask application (Phase 1)
 ├── requirements.txt
-├── tests/test_app.py       # Basic test suite (used by Jenkins)
-├── templates/, static/     # UI
-├── Dockerfile               # Phase 3
-├── docker-compose.yml       # Run Flask + MySQL locally with one command
-├── Jenkinsfile               # Phase 4
-├── k8s/                      # Phase 5 - deployment, service, mysql, PV, secrets
-├── terraform/                 # Phase 6 - EC2, Security Group, S3
-├── monitoring/                 # Phase 8 - Prometheus + Grafana
-├── logging/                     # Phase 9 - Logstash/ELK config
-├── security/vault-notes.md       # Phase 10 - Vault architecture
-└── disaster-recovery/             # Phase 11 - backup.sh / restore.sh
+├── Dockerfile               # Phase 3 - Docker image config
+├── Jenkinsfile               # Phase 4 - Jenkins Declarative Pipeline
+├── .github/workflows/ci.yml  # GitHub Actions automated CI workflow
+├── tests/
+│   └── test_app.py         # Pytest unit and integration test suite
+├── templates/, static/     # HTML templates and UI assets
+├── k8s/                    # Phase 5 - Database, App deployment (with HPA), Service
+├── terraform/               # Phase 6 - AWS VPC, EKS, RDS, S3, IAM, CloudWatch
+├── monitoring/               # Phase 8 - Prometheus metrics and Grafana dashboard
+├── logging/                   # Phase 9 - ELK Stack (Logstash & Filebeat) configs
+├── security/                   # Phase 10 - HashiCorp Vault (Server & Agent sidecar) configs
+└── disaster-recovery/           # Phase 11 - Automated backup & restore shell scripts
 ```
 
 ## Running it yourself
@@ -51,22 +52,14 @@ docker build -t digital-kyc:latest .
 docker run -p 5000:5000 digital-kyc:latest
 ```
 
-### Option C: Docker Compose (Flask + MySQL — closest to the real architecture)
-
-```bash
-docker compose up --build
-```
-
-### Option D: Kubernetes (minikube)
+### Option C: Kubernetes (minikube)
 
 ```bash
 minikube start
 eval $(minikube docker-env)        # so minikube can see your local image
 docker build -t digital-kyc:latest .
 
-kubectl apply -f k8s/secret.yaml
-kubectl apply -f k8s/persistent-volume.yaml
-kubectl apply -f k8s/mysql.yaml
+kubectl apply -f k8s/database.yaml
 kubectl apply -f k8s/deployment.yaml
 kubectl apply -f k8s/service.yaml
 
@@ -75,7 +68,7 @@ kubectl get services
 minikube service kyc-flask-service --url
 ```
 
-### Option E: Terraform (provisions real AWS infra — costs apply)
+### Option D: Terraform (provisions real AWS infra — costs apply)
 
 ```bash
 cd terraform
@@ -90,7 +83,7 @@ terraform destroy
 
 ```bash
 pip install pytest
-pytest tests/ -v
+PYTHONPATH=. pytest tests/ -v
 ```
 
 ## Notes
